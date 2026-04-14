@@ -93,6 +93,9 @@ class IterativeReconAlg(object):
             OS_SART_TV
             FISTA
 
+    :keyword proj_mask: 
+        Boolean mask of the shape of the projection data.
+
     Usage
     --------
     >>> import numpy as np
@@ -136,6 +139,7 @@ class IterativeReconAlg(object):
         self.niter = niter
 
         self.geo.check_geo(angles)
+        self.proj_mask = np.ones_like(proj) if "proj_mask" not in kwargs else kwargs["proj_mask"]
 
         options = dict(
             blocksize=20,
@@ -174,6 +178,7 @@ class IterativeReconAlg(object):
             "niter_outer",
             "prior",
             "prior_ratio",
+            "proj_mask",
         ]
         self.__dict__.update(options)
         self.__dict__.update(**kwargs)
@@ -396,7 +401,8 @@ class IterativeReconAlg(object):
             / self.V[iteration]
             * Atb(
                 self.W[ang_index]
-                * (self.proj[ang_index] - Ax(self.res, geo, angle, "Siddon", gpuids=self.gpuids)),
+                * (self.proj[ang_index] - Ax(self.res, geo, angle, "Siddon", gpuids=self.gpuids))
+                * self.proj_mask[ang_index],
                 geo,
                 angle,
                 "FDK",

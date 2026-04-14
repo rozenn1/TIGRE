@@ -6,7 +6,7 @@ import math
 import numpy
 from tqdm import tqdm
 
-from PIL import Image
+import tifffile
 from configparser import ConfigParser
 from tigre.utilities.geometry import Geometry
 
@@ -118,7 +118,7 @@ def readXtekctGeometry(filepath):
             file.readline()
             for line in file:
                 if "\t" in line:
-                    angles.append(math.radians(line.split("\t")[1]))
+                    angles.append(math.radians(float(line.split("\t")[1])))
                 else:
                     angles.append(math.radians(float(line.split(": ")[1])))        
         return folder, geometry, numpy.array(angles)
@@ -158,7 +158,7 @@ def loadNikonProjections(folder, geometry, angles, **kwargs):
     # load images
     files = sorted([file for file in os.listdir(folder) if file.lower().endswith(".tif")])
 
-    image = Image.open(os.path.join(folder, files[indices[0]]))
+    image = tifffile.imread(os.path.join(folder, files[indices[0]]))
     image = numpy.asarray(image).astype(numpy.float32)
     projections = numpy.zeros([len(indices), image.shape[0], image.shape[1]], dtype=numpy.single)
     projections[0, :, :] = -numpy.log(image / float(geometry.whitelevel))
@@ -167,7 +167,7 @@ def loadNikonProjections(folder, geometry, angles, **kwargs):
     # use enumerate, it's cleaner
     print("Loading Nikon dataset: " + folder)
     for index, i in enumerate(tqdm(indices[1:]), 1):
-        image = Image.open(os.path.join(folder, files[i]))
+        image = tifffile.imread(os.path.join(folder, files[i]))
         image = numpy.asarray(image).astype(numpy.float32)
         projections[index, :, :] = -numpy.log(image / float(geometry.whitelevel))
 
@@ -202,7 +202,8 @@ def parse_inputs(geometry, angles, **kwargs):
 
 
 if __name__ == "__main__":
+    folder = r"D:\RPG_202526\phantom\tests_20251114\RR_ImageSkinTest_2025.11.14_16.27.15"
     projections, geometry, angles = NikonDataLoader(
-        "NikonDataLoaderTest/", sampling="continuous", num_angles=100
+        folder, sampling="continuous", num_angles=100
     )
     print("", projections.shape, "", geometry, "", angles, "", sep="\n")
